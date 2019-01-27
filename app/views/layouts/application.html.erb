@@ -1,52 +1,146 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>BreakableToyRevise</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Golf Buddy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <link href="https://fonts.googleapis.com/css?family=Merriweather:700" rel="stylesheet">
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=places&key=<%=ENV["GOOGLE_MAPS_API_KEY"]%>"></script>
+  <script>
+    let map;
+
+    addCourse = (event) => {
+      const courseName = event.currentTarget.attributes["data-course-name"].value
+      debugger
+      fetch('/api/v1/golf_courses', {
+        credentials: 'same-origin',
+        method: 'POST',
+        body: JSON.stringify({name: courseName}),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => {
+        if(response.ok) {
+          return response;
+        } else {
+          let errorMessage = `${response.status} (${response.statusText})`,
+          error = new Error(errorMessage);
+          throw(error);
+        }
+      })
+      window.location.reload();
+    }
+
+    function initialize() {
+      let place;
+      let newLocation;
+
+      let center = new google.maps.LatLng(42.3540243,-71.0610617);
+      map = new google.maps.Map(document.getElementById('map-display'), {
+        center: center,
+        zoom: 12
+      });
+      let input = document.getElementById('search');
+      let autocomplete = new google.maps.places.Autocomplete(input);
+      autocomplete.bindTo('bounds', map)
+      google.maps.event.addListener(autocomplete, 'place_changed', function(){
+        place = autocomplete.getPlace();
+        if (!place.geometry){
+          return;
+        }
+        if (place.geometry.viewport) {
+          map.fitBounds(place.geometry.viewport);
+        } else {
+          map.setCenter(place.geometry.location);
+          map.setZoom(12);
+        }
+
+        let newLocation = new google.maps.LatLng(place.geometry.location.lat(), place.geometry.location.lng())
+
+        let request = {
+          location: newLocation,
+          radius: 50000,
+          types: ['establishment'],
+          keyword: ['golf course']
+        };
+
+        let service = new google.maps.places.PlacesService(map);
+        service.nearbySearch(request, callback);
+      })
+    }
+
+    function callback(results, status) {
+      if(status == google.maps.places.PlacesServiceStatus.OK){
+        for (let i = 0; i<results.length; i++){
+          createMarker(results[i]);
+        }
+      }
+    }
+
+    function createMarker(place) {
+      let placeLoc = place.geometry.location;
+      let marker = new google.maps.Marker({
+        map: map,
+        position: placeLoc
+      });
+      let payLoad = {
+        name: place.name
+      };
+      let infowindow = new google.maps.InfoWindow({
+        content: ('<h6>' + place.name +'</h6>' + "Rating: " + place.rating + " Stars<br/><br/>"+ '<button data-course-name="' + payLoad.name + '" onClick="addCourse(event)">Add Course</button>')
+      })
+      google.maps.event.addListener(marker, 'click', function() {
+        infowindow.open(map, marker);
+      });
+    }
+    google.maps.event.addDomListener(window, 'load', initialize);
+  </script>
   <%= stylesheet_link_tag 'application', media: 'all' %>
-  
+
     <%= javascript_include_tag "vendor/modernizr" %>
-  
+
   <%= csrf_meta_tags %>
 </head>
 <body>
-  
-  <nav class="top-bar">
-    <ul class="title-area">
-      <li class="name">
-        <h1><a href="/">BreakableToyRevise</a></h1>
-      </li>
-    </ul>
+  <div class="home-link">
+  <p> <%= link_to 'Golfer Buddy', root_path, :class => 'index-title'%> </p>
+  </div>
 
-    <section class="top-bar-section">
-      <ul class="right">
-        <%- if current_user -%>
-          <li><%= link_to 'Sign Out', destroy_user_session_path, method: :delete %></li>
-        <%- else -%>
-          <li><%= link_to 'Sign Up', new_user_registration_path %></li>
-          <li><%= link_to 'Sign In', new_user_session_path %></li>
-        <%- end -%>
-      </ul>
-    </section>
-  </nav>
-
-  <%- flash.each do |key, value| -%>
-    <div class="flash flash-<%= key %>">
-      <%= value %>
+  <div class="top-bar-right">
+    <%- if current_user -%>
+    <div class="login-button circle"
+      <p><%= link_to 'Sign Out', destroy_user_session_path, method: :delete, :class => 'login-button-circle' %></p>
+      <p> <%=  link_to 'Profile', "/users/#{current_user.id}", :class => 'profile-button' %></p>
     </div>
-  <%- end -%>
+    <%- else -%>
+    <div class='sign-up-buttons circle'>
+      <p id='sign-up'><%= link_to 'Sign Up', new_user_registration_path, :class => 'login-button1'%></p>
+      <p id='sign-in'><%= link_to 'Sign In', new_user_session_path, :class => 'login-button2'%></p>
+    </div>
+    <%- end -%>
+    </div>
+    <br>
+    <br>
 
   <%= yield %>
 
   <%= javascript_include_tag 'application' %>
-  
-  <%- if Rails.env.development? || Rails.env.test? -%> 
+
+  <%- if Rails.env.development? || Rails.env.test? -%>
     <%= javascript_tag do %>
       window.railsEnv = '<%= Rails.env %>'
     <%- end -%>
   <%- end -%>
   <%= javascript_pack_tag 'application' %>
-  
+
+  <%- if current_user -%>
+    <%= javascript_tag do %>
+      window.currentUser = <%==current_user.to_json%>
+    <%- end -%>
+  <%- end -%>
+
   <%= yield :extra_footer %>
 </body>
 </html>
