@@ -1,10 +1,14 @@
-import React from 'react'
+import React, {Component} from 'react'
 
-const Scorecards = (props) => {
+class ScoreCards extends Component {
 
-  return(
-    <div>
-      <h1>Scorecards.js</h1>
-    </div>
-  )
+  render(){
+    return(
+      <div>
+        <h1>ScoreCards.js</h1>
+      </div>
+    )
+  }
 }
+
+export default ScoreCards

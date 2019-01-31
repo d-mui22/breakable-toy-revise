@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import CourseList from '../../components/homepage/courses/CoursesList'
+import CoursesList from '../../components/homepage/courses/CoursesList'
 import Scorecards from '../../components/scorecards/ScoreCards'
 
 class HomepageCourseList extends Component {
@@ -24,7 +24,7 @@ class HomepageCourseList extends Component {
   render() {
     return(
       <div>
-        <CourseList
+        <CoursesList
           courseList={this.state.golf_courses}
         />
       </div>
