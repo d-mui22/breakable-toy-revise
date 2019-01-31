@@ -8,7 +8,7 @@
   <script>
     let map;
 
-    addCourse = (event) => {
+    let addCourse = (event) => {
       const courseName = event.currentTarget.attributes["data-course-name"].value
       debugger
       fetch('/api/v1/golf_courses', {
