@@ -1,4 +1,7 @@
 import React from 'react'
+import Holes from './holes/Holes'
+import Pars from './pars/Pars'
+import Strokes from './strokes/Strokes'
 
 const ScoreCard = (props) => {
   return(
